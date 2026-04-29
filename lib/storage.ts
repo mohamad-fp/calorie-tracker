@@ -1,67 +1,90 @@
+import { supabase } from "./supabase";
 import { FoodEntry, DayLog } from "./types";
 
-const STORAGE_PREFIX = "cal_";
+export async function getDayLog(date: string): Promise<DayLog> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { date, entries: [] };
 
-function dayKey(date: string): string {
-  return `${STORAGE_PREFIX}day_${date}`;
+  const { data } = await supabase
+    .from("food_entries")
+    .select("id, name, calories, protein, timestamp")
+    .eq("user_id", user.id)
+    .eq("date", date)
+    .order("timestamp", { ascending: true });
+
+  return {
+    date,
+    entries: (data ?? []).map((row) => ({
+      id: row.id,
+      name: row.name,
+      calories: row.calories ?? undefined,
+      protein: row.protein ?? undefined,
+      timestamp: row.timestamp,
+    })),
+  };
 }
 
-function weightKey(date: string): string {
-  return `${STORAGE_PREFIX}weight_${date}`;
+export async function addEntry(date: string, entry: FoodEntry): Promise<void> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return;
+
+  await supabase.from("food_entries").insert({
+    id: entry.id,
+    user_id: user.id,
+    date,
+    name: entry.name,
+    calories: entry.calories ?? null,
+    protein: entry.protein ?? null,
+    timestamp: entry.timestamp,
+  });
 }
 
-export function getDayLog(date: string): DayLog {
-  if (typeof window === "undefined") return { date, entries: [] };
-  const raw = localStorage.getItem(dayKey(date));
-  if (!raw) return { date, entries: [] };
-  try {
-    return JSON.parse(raw) as DayLog;
-  } catch {
-    return { date, entries: [] };
-  }
+export async function deleteEntry(date: string, entryId: string): Promise<void> {
+  await supabase.from("food_entries").delete().eq("id", entryId);
 }
 
-export function saveDayLog(log: DayLog): void {
-  localStorage.setItem(dayKey(log.date), JSON.stringify(log));
+export async function getWeight(date: string): Promise<number | undefined> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return undefined;
+
+  const { data } = await supabase
+    .from("weights")
+    .select("weight")
+    .eq("user_id", user.id)
+    .eq("date", date)
+    .single();
+
+  return data?.weight ?? undefined;
 }
 
-export function addEntry(date: string, entry: FoodEntry): DayLog {
-  const log = getDayLog(date);
-  log.entries.push(entry);
-  saveDayLog(log);
-  return log;
+export async function saveWeight(date: string, weight: number): Promise<void> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return;
+
+  await supabase.from("weights").upsert(
+    { user_id: user.id, date, weight },
+    { onConflict: "user_id,date" }
+  );
 }
 
-export function deleteEntry(date: string, entryId: string): DayLog {
-  const log = getDayLog(date);
-  log.entries = log.entries.filter((e) => e.id !== entryId);
-  saveDayLog(log);
-  return log;
-}
+export async function getAllStoredDates(): Promise<string[]> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return [];
 
-export function getWeight(date: string): number | undefined {
-  if (typeof window === "undefined") return undefined;
-  const raw = localStorage.getItem(weightKey(date));
-  if (!raw) return undefined;
-  return parseFloat(raw);
-}
+  const [{ data: entries }, { data: weightRows }] = await Promise.all([
+    supabase
+      .from("food_entries")
+      .select("date")
+      .eq("user_id", user.id),
+    supabase
+      .from("weights")
+      .select("date")
+      .eq("user_id", user.id),
+  ]);
 
-export function saveWeight(date: string, weight: number): void {
-  localStorage.setItem(weightKey(date), String(weight));
-}
-
-export function getAllStoredDates(): string[] {
-  if (typeof window === "undefined") return [];
   const dateSet = new Set<string>();
-  const dayPrefix = `${STORAGE_PREFIX}day_`;
-  const weightPrefix = `${STORAGE_PREFIX}weight_`;
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i);
-    if (key?.startsWith(dayPrefix)) {
-      dateSet.add(key.slice(dayPrefix.length));
-    } else if (key?.startsWith(weightPrefix)) {
-      dateSet.add(key.slice(weightPrefix.length));
-    }
-  }
+  for (const row of entries ?? []) dateSet.add(row.date);
+  for (const row of weightRows ?? []) dateSet.add(row.date);
+
   return Array.from(dateSet).sort();
 }

@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
-import BottomNav from "@/components/BottomNav";
+import { AuthProvider } from "@/lib/AuthContext";
 
 export const metadata: Metadata = {
   title: "CalTrack",
@@ -28,10 +28,9 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/icon-192.png" />
       </head>
       <body className="min-h-full bg-surface text-text-primary">
-        <main className="mx-auto max-w-[430px] px-4 pt-4 pb-24">
+        <AuthProvider>
           {children}
-        </main>
-        <BottomNav />
+        </AuthProvider>
       </body>
     </html>
   );

@@ -6,25 +6,30 @@ import { getWeight, saveWeight } from "@/lib/storage";
 type Props = {
   date: string;
   label?: string;
+  onSaved?: () => void;
 };
 
-export default function WeighInCard({ date, label = "Monday Weigh-in" }: Props) {
+export default function WeighInCard({ date, label = "Monday Weigh-in", onSaved }: Props) {
   const [weight, setWeight] = useState("");
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    const w = getWeight(date);
-    if (w != null) {
-      setWeight(String(w));
-      setSaved(true);
+    async function load() {
+      const w = await getWeight(date);
+      if (w != null) {
+        setWeight(String(w));
+        setSaved(true);
+      }
     }
+    load();
   }, [date]);
 
-  function handleSave() {
+  async function handleSave() {
     const val = parseFloat(weight);
     if (!isNaN(val) && val > 0) {
-      saveWeight(date, val);
+      await saveWeight(date, val);
       setSaved(true);
+      onSaved?.();
     }
   }
 

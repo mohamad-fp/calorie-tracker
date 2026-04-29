@@ -16,23 +16,29 @@ export default function TodayPage() {
   const [totalProtein, setTotalProtein] = useState(0);
   const [weekAvg, setWeekAvg] = useState<number | null>(null);
   const [weekWeight, setWeekWeight] = useState<number | undefined>();
-  const [mounted, setMounted] = useState(false);
+  const [loaded, setLoaded] = useState(false);
 
-  const refresh = useCallback(() => {
-    const log = getDayLog(date);
+  const refresh = useCallback(async () => {
+    const [log, cal, prot, avg, wt] = await Promise.all([
+      getDayLog(date),
+      dayTotalCalories(date),
+      dayTotalProtein(date),
+      weekAvgCalories(getMondayStr(date)),
+      weekStartWeight(getMondayStr(date)),
+    ]);
     setEntries(log.entries);
-    setTotalCal(dayTotalCalories(date));
-    setTotalProtein(dayTotalProtein(date));
-    setWeekAvg(weekAvgCalories(getMondayStr(date)));
-    setWeekWeight(weekStartWeight(getMondayStr(date)));
+    setTotalCal(cal);
+    setTotalProtein(prot);
+    setWeekAvg(avg);
+    setWeekWeight(wt);
+    setLoaded(true);
   }, [date]);
 
   useEffect(() => {
-    setMounted(true);
     refresh();
   }, [refresh]);
 
-  function handleAdd(name: string, calories?: number, protein?: number) {
+  async function handleAdd(name: string, calories?: number, protein?: number) {
     const entry: FoodEntry = {
       id: crypto.randomUUID(),
       name,
@@ -40,16 +46,16 @@ export default function TodayPage() {
       protein,
       timestamp: Date.now(),
     };
-    addEntry(date, entry);
+    await addEntry(date, entry);
     refresh();
   }
 
-  function handleDelete(id: string) {
-    deleteEntry(date, id);
+  async function handleDelete(id: string) {
+    await deleteEntry(date, id);
     refresh();
   }
 
-  if (!mounted) return null;
+  if (!loaded) return null;
 
   const mondayStr = getMondayStr(date);
   const showWeighIn = isMonday(date);
@@ -77,15 +83,10 @@ export default function TodayPage() {
         </div>
       )}
 
-      {/* Calorie summary */}
       <div className="bg-surface-card rounded-2xl border border-border-subtle p-5">
-        <p className="text-text-secondary text-sm font-medium uppercase tracking-wider">
-          Today
-        </p>
+        <p className="text-text-secondary text-sm font-medium uppercase tracking-wider">Today</p>
         <div className="mt-2 flex items-baseline gap-2">
-          <span className="text-6xl font-extrabold tracking-tight text-lime-accent tabular-nums">
-            {totalCal}
-          </span>
+          <span className="text-6xl font-extrabold tracking-tight text-lime-accent tabular-nums">{totalCal}</span>
           <span className="text-xl text-text-secondary font-medium">cal</span>
         </div>
         <div className="mt-1 flex gap-4 text-text-secondary">
@@ -102,22 +103,16 @@ export default function TodayPage() {
         </div>
       </div>
 
-      {showWeighIn && <WeighInCard date={mondayStr} />}
+      {showWeighIn && <WeighInCard date={mondayStr} onSaved={refresh} />}
 
-      {/* Food entry form */}
       <div className="bg-surface-card rounded-2xl border border-border-subtle p-5 space-y-4">
-        <p className="text-sm font-semibold text-lime-accent uppercase tracking-wider">
-          Calorie Tracker
-        </p>
+        <p className="text-sm font-semibold text-lime-accent uppercase tracking-wider">Calorie Tracker</p>
         <FoodEntryForm onAdd={handleAdd} />
       </div>
 
-      {/* Today's entries */}
       {entries.length > 0 && (
         <div>
-          <p className="text-xs text-text-muted uppercase tracking-wider font-medium mb-3">
-            Today&apos;s Entries
-          </p>
+          <p className="text-xs text-text-muted uppercase tracking-wider font-medium mb-3">Today&apos;s Entries</p>
           <EntryList entries={entries} onDelete={handleDelete} />
         </div>
       )}
