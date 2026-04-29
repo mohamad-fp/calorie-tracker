@@ -26,6 +26,14 @@ body {
   -webkit-tap-highlight-color: transparent;
 }
 
+/* Prevent iOS from zooming on input focus — must be >= 16px */
+input,
+select,
+textarea {
+  font-size: 16px;
+  touch-action: manipulation;
+}
+
 input[type="number"]::-webkit-inner-spin-button,
 input[type="number"]::-webkit-outer-spin-button {
   -webkit-appearance: none;
@@ -33,4 +41,5 @@ input[type="number"]::-webkit-outer-spin-button {
 }
 input[type="number"] {
   -moz-appearance: textfield;
+  appearance: textfield;
 }

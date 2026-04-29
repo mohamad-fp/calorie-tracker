@@ -7,8 +7,6 @@ export const metadata: Metadata = {
   description: "Personal calorie & protein tracking",
   manifest: "/manifest.json",
   appleWebApp: {
-    capable: true,
-    statusBarStyle: "black-translucent",
     title: "CalTrack",
   },
 };
