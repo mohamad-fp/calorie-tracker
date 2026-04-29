@@ -32,7 +32,7 @@ export default function FoodEntryForm({ onAdd }: Props) {
         placeholder="What did you eat?"
         value={name}
         onChange={(e) => setName(e.target.value)}
-        className="w-full rounded-xl bg-surface-card border border-border-subtle px-4 py-3 text-text-primary placeholder:text-text-muted focus:outline-none focus:border-lime-accent transition-colors"
+        className="w-full rounded-xl bg-surface border border-border-subtle px-4 py-3 text-text-primary placeholder:text-text-muted focus:outline-none focus:border-lime-accent transition-colors"
       />
       <div className="flex gap-3">
         <input
@@ -41,7 +41,7 @@ export default function FoodEntryForm({ onAdd }: Props) {
           placeholder="Calories"
           value={calories}
           onChange={(e) => setCalories(e.target.value)}
-          className="w-0 min-w-0 flex-1 rounded-xl bg-surface-card border border-border-subtle px-3 py-3 text-text-primary placeholder:text-text-muted focus:outline-none focus:border-lime-accent transition-colors"
+          className="w-0 min-w-0 flex-1 rounded-xl bg-surface border border-border-subtle px-3 py-3 text-text-primary placeholder:text-text-muted focus:outline-none focus:border-lime-accent transition-colors"
         />
         <input
           type="number"
@@ -49,7 +49,7 @@ export default function FoodEntryForm({ onAdd }: Props) {
           placeholder="Protein (g)"
           value={protein}
           onChange={(e) => setProtein(e.target.value)}
-          className="w-0 min-w-0 flex-1 rounded-xl bg-surface-card border border-border-subtle px-3 py-3 text-text-primary placeholder:text-text-muted focus:outline-none focus:border-lime-accent transition-colors"
+          className="w-0 min-w-0 flex-1 rounded-xl bg-surface border border-border-subtle px-3 py-3 text-text-primary placeholder:text-text-muted focus:outline-none focus:border-lime-accent transition-colors"
         />
       </div>
       <button
