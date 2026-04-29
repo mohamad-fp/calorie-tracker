@@ -66,82 +66,91 @@ function WeekContent() {
         </div>
       )}
 
-      <div className="flex items-center justify-between">
-        <button
-          onClick={prevWeek}
-          className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center text-text-secondary hover:text-text-primary"
-          aria-label="Previous week"
-        >
-          <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M15 18l-6-6 6-6" />
-          </svg>
-        </button>
-        <div className="text-center">
-          <p className="text-sm text-text-secondary font-medium uppercase tracking-wider">
-            {isCurrentWeek ? "This Week" : "Week"}
-          </p>
-          <p className="text-lg font-semibold">{weekRangeLabel(mondayStr)}</p>
+      {/* Week selector + stats container */}
+      <div className="bg-surface-card rounded-2xl border border-border-subtle p-4 space-y-4">
+        <div className="flex items-center justify-between">
+          <button
+            onClick={prevWeek}
+            className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center text-text-secondary hover:text-text-primary"
+            aria-label="Previous week"
+          >
+            <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M15 18l-6-6 6-6" />
+            </svg>
+          </button>
+          <div className="text-center">
+            <p className="text-sm text-text-secondary font-medium uppercase tracking-wider">
+              {isCurrentWeek ? "This Week" : "Week"}
+            </p>
+            <p className="text-lg font-semibold">{weekRangeLabel(mondayStr)}</p>
+          </div>
+          <button
+            onClick={nextWeek}
+            className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center text-text-secondary hover:text-text-primary"
+            aria-label="Next week"
+          >
+            <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M9 18l6-6-6-6" />
+            </svg>
+          </button>
         </div>
-        <button
-          onClick={nextWeek}
-          className="p-2 min-w-[44px] min-h-[44px] flex items-center justify-center text-text-secondary hover:text-text-primary"
-          aria-label="Next week"
-        >
-          <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="M9 18l6-6-6-6" />
-          </svg>
-        </button>
-      </div>
 
-      <div className="bg-surface-card rounded-xl border border-border-subtle p-4 space-y-1">
-        {endW != null && (
-          <p className="text-sm text-text-secondary">
-            End weight: <span className="font-semibold text-text-primary">{endW} lbs</span>
-            {startW != null && (
-              <span className={`ml-2 font-semibold ${endW < startW ? "text-lime-accent" : endW > startW ? "text-danger" : "text-text-muted"}`}>
-                ({endW < startW ? "" : "+"}{endW - startW} lbs)
-              </span>
-            )}
-          </p>
-        )}
-        <p className="text-sm text-text-secondary">
-          Avg calories:{" "}
-          <span className="font-semibold text-text-primary">
-            {avg != null ? `${avg} cal/day` : "—"}
-          </span>
-        </p>
-      </div>
-
-      <div className="space-y-2">
-        {dates.map((d) => {
-          const has = dayHasEntries(d);
-          const cal = has ? dayTotalCalories(d) : null;
-          const isToday = d === today();
-          return (
-            <Link
-              key={d}
-              href={`/day/${d}`}
-              className={`flex items-center justify-between bg-surface-card rounded-xl px-4 py-3 border transition-colors min-h-[52px] ${
-                isToday ? "border-lime-accent/40" : "border-border-subtle"
-              } active:bg-surface-hover`}
-            >
-              <div className="flex items-center gap-3">
-                <span className="text-sm font-bold text-text-secondary w-8">
-                  {dayName(d)}
+        <div className="border-t border-border-subtle pt-3 space-y-1">
+          {endW != null && (
+            <p className="text-sm text-text-secondary">
+              End weight: <span className="font-semibold text-text-primary">{endW} lbs</span>
+              {startW != null && (
+                <span className={`ml-2 font-semibold ${endW < startW ? "text-lime-accent" : endW > startW ? "text-danger" : "text-text-muted"}`}>
+                  ({endW < startW ? "" : "+"}{endW - startW} lbs)
                 </span>
-                <span className="text-sm text-text-muted">{shortDate(d)}</span>
-                {isToday && (
-                  <span className="text-[10px] font-bold text-lime-accent bg-lime-accent/10 px-1.5 py-0.5 rounded">
-                    TODAY
+              )}
+            </p>
+          )}
+          <p className="text-sm text-text-secondary">
+            Avg calories:{" "}
+            <span className="font-semibold text-text-primary">
+              {avg != null ? `${avg} cal/day` : "—"}
+            </span>
+          </p>
+        </div>
+      </div>
+
+      {/* Daily calorie logs */}
+      <div>
+        <p className="text-xs text-text-muted uppercase tracking-wider font-medium mb-3">
+          Daily Logs
+        </p>
+        <div className="space-y-2">
+          {dates.map((d) => {
+            const has = dayHasEntries(d);
+            const cal = has ? dayTotalCalories(d) : null;
+            const isToday = d === today();
+            return (
+              <Link
+                key={d}
+                href={`/day/${d}`}
+                className={`flex items-center justify-between bg-surface-card rounded-xl px-4 py-3 border transition-colors min-h-[52px] ${
+                  isToday ? "border-lime-accent/40" : "border-border-subtle"
+                } active:bg-surface-hover`}
+              >
+                <div className="flex items-center gap-3">
+                  <span className="text-sm font-bold text-text-secondary w-8">
+                    {dayName(d)}
                   </span>
-                )}
-              </div>
-              <span className={`font-semibold tabular-nums ${cal != null ? "text-text-primary" : "text-text-muted"}`}>
-                {cal != null ? `${cal} cal` : "—"}
-              </span>
-            </Link>
-          );
-        })}
+                  <span className="text-sm text-text-muted">{shortDate(d)}</span>
+                  {isToday && (
+                    <span className="text-[10px] font-bold text-lime-accent bg-lime-accent/10 px-1.5 py-0.5 rounded">
+                      TODAY
+                    </span>
+                  )}
+                </div>
+                <span className={`font-semibold tabular-nums ${cal != null ? "text-text-primary" : "text-text-muted"}`}>
+                  {cal != null ? `${cal} cal` : "—"}
+                </span>
+              </Link>
+            );
+          })}
+        </div>
       </div>
     </div>
   );

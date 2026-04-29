@@ -55,7 +55,7 @@ export default function TodayPage() {
   const showWeighIn = isMonday(date);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <h1 className="text-3xl font-extrabold tracking-tight text-lime-accent">
         Road to 185lbs
       </h1>
@@ -77,7 +77,8 @@ export default function TodayPage() {
         </div>
       )}
 
-      <div>
+      {/* Calorie summary */}
+      <div className="bg-surface-card rounded-2xl border border-border-subtle p-5">
         <p className="text-text-secondary text-sm font-medium uppercase tracking-wider">
           Today
         </p>
@@ -103,9 +104,23 @@ export default function TodayPage() {
 
       {showWeighIn && <WeighInCard date={mondayStr} />}
 
-      <FoodEntryForm onAdd={handleAdd} />
+      {/* Food entry form */}
+      <div className="bg-surface-card rounded-2xl border border-border-subtle p-5 space-y-4">
+        <p className="text-sm font-semibold text-lime-accent uppercase tracking-wider">
+          Calorie Tracker
+        </p>
+        <FoodEntryForm onAdd={handleAdd} />
+      </div>
 
-      <EntryList entries={entries} onDelete={handleDelete} />
+      {/* Today's entries */}
+      {entries.length > 0 && (
+        <div>
+          <p className="text-xs text-text-muted uppercase tracking-wider font-medium mb-3">
+            Today&apos;s Entries
+          </p>
+          <EntryList entries={entries} onDelete={handleDelete} />
+        </div>
+      )}
     </div>
   );
 }

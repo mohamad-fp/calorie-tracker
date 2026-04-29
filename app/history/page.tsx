@@ -3,12 +3,14 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { getAllStoredDates } from "@/lib/storage";
-import { getMondayStr, weekRangeLabel } from "@/lib/dates";
+import { getMondayStr, weekRangeLabel, shortDate } from "@/lib/dates";
 import { weekAvgCalories, weekStartWeight, weekEndWeight } from "@/lib/stats";
+import TrendsChart from "@/components/TrendsChart";
 
 type WeekSummary = {
   monday: string;
   label: string;
+  shortLabel: string;
   avg: number | null;
   startW?: number;
   endW?: number;
@@ -16,6 +18,7 @@ type WeekSummary = {
 
 export default function HistoryPage() {
   const [weeks, setWeeks] = useState<WeekSummary[]>([]);
+  const [tab, setTab] = useState<"list" | "trends">("list");
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -29,6 +32,7 @@ export default function HistoryPage() {
     const summaries: WeekSummary[] = sorted.map((m) => ({
       monday: m,
       label: weekRangeLabel(m),
+      shortLabel: shortDate(m),
       avg: weekAvgCalories(m),
       startW: weekStartWeight(m),
       endW: weekEndWeight(m),
@@ -52,46 +56,78 @@ export default function HistoryPage() {
     );
   }
 
+  const trendData = weeks.map((w) => ({
+    label: w.shortLabel,
+    weight: w.startW,
+    avgCal: w.avg,
+  }));
+
   return (
     <div className="space-y-5">
       <h1 className="text-3xl font-extrabold tracking-tight text-lime-accent">
         Road to 185lbs
       </h1>
-      <p className="text-sm text-text-secondary font-medium uppercase tracking-wider">
-        History
-      </p>
-      <div className="space-y-3">
-        {weeks.map((w) => (
-          <Link
-            key={w.monday}
-            href={`/week?start=${w.monday}`}
-            className="block bg-surface-card rounded-xl border border-border-subtle p-4 active:bg-surface-hover transition-colors"
-          >
-            <p className="font-semibold text-base">{w.label}</p>
-            <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm text-text-secondary">
-              <span>
-                Avg:{" "}
-                <span className="font-semibold text-text-primary">
-                  {w.avg != null ? `${w.avg} cal/day` : "—"}
-                </span>
-              </span>
-              {w.startW != null && (
-                <span>
-                  {w.startW} lbs
-                  {w.endW != null && (
-                    <>
-                      {" → "}{w.endW} lbs
-                      <span className={`ml-1 font-semibold ${w.endW < w.startW ? "text-lime-accent" : w.endW > w.startW ? "text-danger" : ""}`}>
-                        ({w.endW < w.startW ? "" : "+"}{w.endW - w.startW})
-                      </span>
-                    </>
-                  )}
-                </span>
-              )}
-            </div>
-          </Link>
-        ))}
+
+      {/* Sub-tabs */}
+      <div className="flex bg-surface-card rounded-xl border border-border-subtle p-1">
+        <button
+          onClick={() => setTab("list")}
+          className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-colors min-h-[44px] ${
+            tab === "list"
+              ? "bg-lime-accent text-surface"
+              : "text-text-secondary"
+          }`}
+        >
+          List
+        </button>
+        <button
+          onClick={() => setTab("trends")}
+          className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-colors min-h-[44px] ${
+            tab === "trends"
+              ? "bg-lime-accent text-surface"
+              : "text-text-secondary"
+          }`}
+        >
+          Trends
+        </button>
       </div>
+
+      {tab === "list" ? (
+        <div className="space-y-3">
+          {weeks.map((w) => (
+            <Link
+              key={w.monday}
+              href={`/week?start=${w.monday}`}
+              className="block bg-surface-card rounded-xl border border-border-subtle p-4 active:bg-surface-hover transition-colors"
+            >
+              <p className="font-semibold text-base">{w.label}</p>
+              <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm text-text-secondary">
+                <span>
+                  Avg:{" "}
+                  <span className="font-semibold text-text-primary">
+                    {w.avg != null ? `${w.avg} cal/day` : "—"}
+                  </span>
+                </span>
+                {w.startW != null && (
+                  <span>
+                    {w.startW} lbs
+                    {w.endW != null && (
+                      <>
+                        {" → "}{w.endW} lbs
+                        <span className={`ml-1 font-semibold ${w.endW < w.startW ? "text-lime-accent" : w.endW > w.startW ? "text-danger" : ""}`}>
+                          ({w.endW < w.startW ? "" : "+"}{w.endW - w.startW})
+                        </span>
+                      </>
+                    )}
+                  </span>
+                )}
+              </div>
+            </Link>
+          ))}
+        </div>
+      ) : (
+        <TrendsChart weeks={trendData} />
+      )}
     </div>
   );
 }
