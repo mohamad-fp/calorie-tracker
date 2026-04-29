@@ -52,13 +52,16 @@ export function saveWeight(date: string, weight: number): void {
 
 export function getAllStoredDates(): string[] {
   if (typeof window === "undefined") return [];
-  const dates: string[] = [];
-  const prefix = `${STORAGE_PREFIX}day_`;
+  const dateSet = new Set<string>();
+  const dayPrefix = `${STORAGE_PREFIX}day_`;
+  const weightPrefix = `${STORAGE_PREFIX}weight_`;
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i);
-    if (key?.startsWith(prefix)) {
-      dates.push(key.slice(prefix.length));
+    if (key?.startsWith(dayPrefix)) {
+      dateSet.add(key.slice(dayPrefix.length));
+    } else if (key?.startsWith(weightPrefix)) {
+      dateSet.add(key.slice(weightPrefix.length));
     }
   }
-  return dates.sort();
+  return Array.from(dateSet).sort();
 }

@@ -16,7 +16,6 @@ const CAL_COLOR = "#f5a623";
 export default function TrendsChart({ weeks }: Props) {
   const chronological = [...weeks].reverse();
 
-  // Only include weeks that have at least one metric
   const combined = chronological.filter(
     (w) => w.weight != null || w.avgCal != null
   );
@@ -37,45 +36,61 @@ export default function TrendsChart({ weeks }: Props) {
   const weights = combined.filter((w) => w.weight != null);
   const cals = combined.filter((w) => w.avgCal != null);
 
-  const wMin = weights.length ? Math.min(...weights.map((w) => w.weight!)) : 0;
-  const wMax = weights.length ? Math.max(...weights.map((w) => w.weight!)) : 0;
-  const wRange = wMax - wMin || 1;
+  // Add 5% padding to ranges so single points don't sit on the edge
+  function padRange(min: number, max: number) {
+    if (min === max) {
+      const pad = Math.max(Math.abs(min) * 0.1, 5);
+      return { min: min - pad, max: max + pad, range: pad * 2 };
+    }
+    const r = max - min;
+    const pad = r * 0.08;
+    return { min: min - pad, max: max + pad, range: r + pad * 2 };
+  }
 
-  const cMin = cals.length ? Math.min(...cals.map((w) => w.avgCal!)) : 0;
-  const cMax = cals.length ? Math.max(...cals.map((w) => w.avgCal!)) : 0;
-  const cRange = cMax - cMin || 1;
+  const wRaw = weights.length
+    ? padRange(
+        Math.min(...weights.map((w) => w.weight!)),
+        Math.max(...weights.map((w) => w.weight!))
+      )
+    : { min: 0, max: 1, range: 1 };
+
+  const cRaw = cals.length
+    ? padRange(
+        Math.min(...cals.map((w) => w.avgCal!)),
+        Math.max(...cals.map((w) => w.avgCal!))
+      )
+    : { min: 0, max: 1, range: 1 };
 
   const W = 320;
   const H = 180;
   const padL = 36;
   const padR = 36;
-  const padTop = 16;
+  const padTop = 20;
   const padBot = 28;
   const chartW = W - padL - padR;
   const chartH = H - padTop - padBot;
+  const isSingle = combined.length === 1;
 
   function xPos(i: number) {
-    return padL + (combined.length === 1 ? chartW / 2 : (i / (combined.length - 1)) * chartW);
+    return padL + (isSingle ? chartW / 2 : (i / (combined.length - 1)) * chartW);
   }
 
-  // Build weight line coords
+  function wY(val: number) {
+    return padTop + chartH - ((val - wRaw.min) / wRaw.range) * chartH;
+  }
+
+  function cY(val: number) {
+    return padTop + chartH - ((val - cRaw.min) / cRaw.range) * chartH;
+  }
+
   const weightCoords = combined.map((w, i) => {
     if (w.weight == null) return null;
-    return {
-      x: xPos(i),
-      y: padTop + chartH - ((w.weight - wMin) / wRange) * chartH,
-      value: w.weight,
-    };
+    return { x: xPos(i), y: wY(w.weight), value: w.weight };
   });
 
-  // Build calorie line coords
   const calCoords = combined.map((w, i) => {
     if (w.avgCal == null) return null;
-    return {
-      x: xPos(i),
-      y: padTop + chartH - ((w.avgCal - cMin) / cRange) * chartH,
-      value: w.avgCal,
-    };
+    return { x: xPos(i), y: cY(w.avgCal), value: w.avgCal };
   });
 
   function buildPath(coords: (typeof weightCoords)) {
@@ -88,15 +103,23 @@ export default function TrendsChart({ weeks }: Props) {
   const weightPath = buildPath(weightCoords);
   const calPath = buildPath(calCoords);
 
-  // Y-axis ticks
-  const wTicks = [0, 0.5, 1].map((f) => ({
-    y: padTop + chartH - f * chartH,
-    label: Math.round(wMin + f * wRange),
-  }));
-  const cTicks = [0, 0.5, 1].map((f) => ({
-    y: padTop + chartH - f * chartH,
-    label: Math.round(cMin + f * cRange),
-  }));
+  const dotR = isSingle ? 5 : 3.5;
+
+  // Y-axis ticks — use actual min/max for labels
+  const wTickVals = weights.length
+    ? [
+        Math.round(wRaw.min + wRaw.range * 0.05),
+        Math.round(wRaw.min + wRaw.range * 0.5),
+        Math.round(wRaw.min + wRaw.range * 0.95),
+      ]
+    : [];
+  const cTickVals = cals.length
+    ? [
+        Math.round(cRaw.min + cRaw.range * 0.05),
+        Math.round(cRaw.min + cRaw.range * 0.5),
+        Math.round(cRaw.min + cRaw.range * 0.95),
+      ]
+    : [];
 
   return (
     <div className="bg-surface-card rounded-2xl border border-border-subtle p-4">
@@ -144,38 +167,36 @@ export default function TrendsChart({ weeks }: Props) {
         })}
 
         {/* Left axis labels (weight) */}
-        {weights.length > 0 &&
-          wTicks.map((t, i) => (
-            <text
-              key={`wt-${i}`}
-              x={padL - 4}
-              y={t.y + 3}
-              fill={WEIGHT_COLOR}
-              fontSize="7"
-              textAnchor="end"
-              fontFamily="system-ui"
-              opacity="0.7"
-            >
-              {t.label}
-            </text>
-          ))}
+        {wTickVals.map((val, i) => (
+          <text
+            key={`wt-${i}`}
+            x={padL - 4}
+            y={wY(val) + 3}
+            fill={WEIGHT_COLOR}
+            fontSize="7"
+            textAnchor="end"
+            fontFamily="system-ui"
+            opacity="0.7"
+          >
+            {val}
+          </text>
+        ))}
 
         {/* Right axis labels (calories) */}
-        {cals.length > 0 &&
-          cTicks.map((t, i) => (
-            <text
-              key={`ct-${i}`}
-              x={W - padR + 4}
-              y={t.y + 3}
-              fill={CAL_COLOR}
-              fontSize="7"
-              textAnchor="start"
-              fontFamily="system-ui"
-              opacity="0.7"
-            >
-              {t.label}
-            </text>
-          ))}
+        {cTickVals.map((val, i) => (
+          <text
+            key={`ct-${i}`}
+            x={W - padR + 4}
+            y={cY(val) + 3}
+            fill={CAL_COLOR}
+            fontSize="7"
+            textAnchor="start"
+            fontFamily="system-ui"
+            opacity="0.7"
+          >
+            {val}
+          </text>
+        ))}
 
         {/* Weight line */}
         {weightPath && (
@@ -206,17 +227,17 @@ export default function TrendsChart({ weeks }: Props) {
           (c, i) =>
             c && (
               <g key={`wd-${i}`}>
-                <circle cx={c.x} cy={c.y} r="3" fill={WEIGHT_COLOR} />
+                <circle cx={c.x} cy={c.y} r={dotR} fill={WEIGHT_COLOR} />
                 <text
                   x={c.x}
-                  y={c.y - 7}
+                  y={c.y - 9}
                   fill={WEIGHT_COLOR}
-                  fontSize="7"
+                  fontSize={isSingle ? "9" : "7"}
                   textAnchor="middle"
-                  fontWeight="600"
+                  fontWeight="700"
                   fontFamily="system-ui"
                 >
-                  {c.value}
+                  {c.value} lbs
                 </text>
               </g>
             )
@@ -227,17 +248,17 @@ export default function TrendsChart({ weeks }: Props) {
           (c, i) =>
             c && (
               <g key={`cd-${i}`}>
-                <circle cx={c.x} cy={c.y} r="3" fill={CAL_COLOR} />
+                <circle cx={c.x} cy={c.y} r={dotR} fill={CAL_COLOR} />
                 <text
                   x={c.x}
-                  y={c.y + 14}
+                  y={c.y + 16}
                   fill={CAL_COLOR}
-                  fontSize="7"
+                  fontSize={isSingle ? "9" : "7"}
                   textAnchor="middle"
-                  fontWeight="600"
+                  fontWeight="700"
                   fontFamily="system-ui"
                 >
-                  {c.value}
+                  {c.value} cal
                 </text>
               </g>
             )
